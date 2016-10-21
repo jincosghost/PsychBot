@@ -24,13 +24,14 @@ function isMention(usr) {
 
 bot.on("message", (msg) => {
     let prefix = "!";
-    let input = msg.cleanContent.toUpperCase(); //for case insensitive stuff
-    let db = firebase.database();
+    if (!msg.content.startsWith(prefix) || msg.author.bot) return;
 
-    if (!msg.content.startsWith(prefix) || msg.author.bot) { return; }
+    let input = msg.cleanContent.toUpperCase(); //for case insensitive stuff
+    var db = firebase.database();
 
     if (msg.content.startsWith(prefix + "help")){
-        msg.channel.sendMessage("Hi, I'm PsychBot.");
+        msg.channel.sendMessage(`\`\`\`Markdown
+#PsychBot\'s Commands\n!help : displays this message.\n\n< Memes >\n!isdoe @user : checks if mentioned user is Doe.\n!whois @user : displays info on the mentioned user.\n!roll # : rolls a die with the specified number of sides.\n!gmroll # : same as roll but the result is sent to you in a DM.\n!yn (question) : will answer your question with yes or no.\n!8ball (question) : will shake a magic 8 ball for you.\n\n< Goals >\n!setgoal (goal) : will set a publically viewable goal.\n!getgoal @user : displays the mentioned user\'s goal.\n!delgoal : will delete your set goal.\n\n< Wellbeing Tracking >\n[Wellbeing scores can be obtained at Jinco\'s Github](http://jincosghost.github.io/permap).\n!setperma 1,2,3,4,5,6,7,8,9 : will store your PERMA scores in this order:\n  [1]: Positive Emotion,\n  [2]: Negative Emotion,\n  [3]: Engagement,\n  [4]: Relationships,\n  [5]: Meaning,\n  [6]: Accomplishment,\n  [7]: Health,\n  [8]: Overall Wellbeing,\n  [9]: Lonliness.\nThis command will also generate a timecode for the stored results so that you can delete them later.\n!getperma @user : displays averages for user\'s stored PERMA scores.\n!delperm (timecode) : will delete the specified set of PERMA scores.\`\`\``);
     } else if (msg.content.startsWith(prefix + "isdoe")) {
         let usr = msg.mentions.users.first();
         if (!isMention(usr)) {
@@ -56,6 +57,24 @@ bot.on("message", (msg) => {
                 msg.channel.sendMessage(`${usr.username} (${usr.discriminator}) joined ${timez}, on ${dob}.\nHere is their avatar: ${usr.avatarURL}`);
             }
         }
+    } else if (msg.content.startsWith(prefix + "roll")) {
+        let cleanMsg = msg.cleanContent.replace(/^(!roll)/i,''); // remove !roll
+            cleanMsg = cleanMsg.replace(/[^0-9]+/g, ''); // remove anything that isnt a number . or ,
+        let sides = 6;
+        if (Number(cleanMsg) !== 0) {
+            sides = Number(cleanMsg);
+        }
+        let result = Math.floor(Math.random() * sides) + 1;
+        msg.channel.sendMessage(`${msg.author.username} rolled a ${result}`);
+    } else if (msg.content.startsWith(prefix + "gmroll")) {
+        let cleanMsg = msg.cleanContent.replace(/^(!gmroll)/i,''); // remove !gmroll
+            cleanMsg = cleanMsg.replace(/[^0-9]+/g, ''); // remove anything that isnt a number . or ,
+        let sides = 6;
+        if (Number(cleanMsg) !== 0) {
+            sides = Number(cleanMsg);
+        }
+        let result = Math.floor(Math.random() * sides) + 1;
+        msg.author.sendMessage(`You rolled a ${result}`);
     } else if (msg.content.startsWith(prefix + "yn")) {
         let rep;
         ~~(Math.random()*2) ? rep = "Yes" : rep = "No";
@@ -72,10 +91,9 @@ bot.on("message", (msg) => {
         let answer = answers[Math.floor(Math.random() * answers.length)];
         msg.channel.sendMessage(`${answer}, ${msg.author.username}`);
     } else if (msg.content.startsWith(prefix + "setperma")) {
-        let cleanMsg = msg.cleanContent.replace(/^(![\w]+\s)/gi,''); // remove !setperma
-            cleanMsg = cleanMsg.replace(/\s+/g, ''); // remove spaces
+        let cleanMsg = msg.cleanContent.replace(/^(!setperma)/i,''); // remove !setperma
             cleanMsg = cleanMsg.replace(/[^0-9.,]+/, ''); // remove anything that isnt a number . or ,
-        let array = cleanMsg.trim().split(',');
+        let array = cleanMsg.split(',');
             array = array.filter(Number);
         if (array.length < 9 || array.length > 9) {
             msg.channel.sendMessage(`${msg.author.username}, I expected nine numbers in order to save your wellbeing scores. You gave me ${array.length}. Please try again.`);
@@ -137,12 +155,14 @@ bot.on("message", (msg) => {
             });
         }
     } else if (msg.content.startsWith(prefix + "delperma")) {
-        let cleanMsg = msg.cleanContent.replace(/^(![\w]+\s)/gi,'');
-        let ref = db.ref(`${msg.guild.id}/perma/${msg.author.id}`);
-        let usersRef = ref.child(`${cleanMsg}`);
-        if (cleanMsg.trim() == "" || cleanMsg.trim() == null || cleanMsg.trim() == "!delperma") {
+        let cleanMsg = msg.cleanContent.replace(/!delperma/,'');
+        let trimmed = cleanMsg.trim();
+        if (trimmed == "" || trimmed == null || !trimmed || trimmed.length === 0) {
             msg.channel.sendMessage(`${msg.author.username}, you need to specify a timecode with that command.`);
+            return;
         } else {
+            let ref = db.ref(`${msg.guild.id}/perma/${msg.author.id}/`);
+            let usersRef = ref.child(`${cleanMsg}`);
             usersRef.once("value", function(data){
                 if (data.val() == null) {
                     msg.channel.sendMessage(`${msg.author.username}, there was no set of PERMA scores with that timecode.`);
@@ -158,18 +178,22 @@ bot.on("message", (msg) => {
             });
         }
     } else if (msg.content.startsWith(prefix + "setgoal")) {
-        let cleanMsg = msg.cleanContent.replace(/^(![\w]+\s)/gi,'');
-        let timestamp = moment().format('x');
-        let ref = db.ref(`${msg.guild.id}/goals/`);
-        let usersRef = ref.child(`${msg.author.id}`);
-        usersRef.set({
-            "goal" : cleanMsg,
-            "timestamp" : timestamp
-        }).then(function(){
-            msg.channel.sendMessage(`${msg.author.username}, I've set your goals.`);
-        }).catch(function(e){
-            msg.channel.sendMessage(`${msg.author.username}, there was an error setting your goals: ${e}`);
-        });
+        let cleanMsg = msg.cleanContent.replace(/!setgoal/,'');
+        if (cleanMsg == "" || cleanMsg == null || !cleanMsg) {
+            msg.channel.sendMessage(`${msg.author.username}, I didn't detect any text after you told me to set your goal. Please try again.`);
+        } else {
+            let timestamp = moment().format('x');
+            let ref = db.ref(`${msg.guild.id}/goals/`);
+            let usersRef = ref.child(`${msg.author.id}`);
+            usersRef.set({
+                "goal" : cleanMsg,
+                "timestamp" : timestamp
+            }).then(function(){
+                msg.channel.sendMessage(`${msg.author.username}, I've set your goals.`);
+            }).catch(function(e){
+                msg.channel.sendMessage(`${msg.author.username}, there was an error setting your goals: ${e}`);
+            });
+        }
     } else if (msg.content.startsWith(prefix + "getgoal")) {
         let usr = msg.mentions.users.first();
         if (!isMention(usr)) {
@@ -274,7 +298,7 @@ function init(){
         databaseURL: settings.db
     });
 
-    bot.login(atob(settings.token));
+    bot.login(atob(settings.testingtoken));
 }
 
 init();
