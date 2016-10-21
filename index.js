@@ -31,7 +31,7 @@ bot.on("message", (msg) => {
 
     if (msg.content.startsWith(prefix + "help")){
         msg.channel.sendMessage(`\`\`\`Markdown
-#PsychBot\'s Commands\n!help : displays this message.\n\n< Memes >\n!isdoe @user : checks if mentioned user is Doe.\n!whois @user : displays info on the mentioned user.\n!roll # : rolls a die with the specified number of sides.\n!gmroll # : same as roll but the result is sent to you in a DM.\n!yn (question) : will answer your question with yes or no.\n!8ball (question) : will shake a magic 8 ball for you.\n\n< Goals >\n!setgoal (goal) : will set a publically viewable goal.\n!getgoal @user : displays the mentioned user\'s goal.\n!delgoal : will delete your set goal.\n\n< Wellbeing Tracking >\n[Wellbeing scores can be obtained at Jinco\'s Github](http://jincosghost.github.io/permap).\n!setperma 1,2,3,4,5,6,7,8,9 : will store your PERMA scores in this order:\n  [1]: Positive Emotion,\n  [2]: Negative Emotion,\n  [3]: Engagement,\n  [4]: Relationships,\n  [5]: Meaning,\n  [6]: Accomplishment,\n  [7]: Health,\n  [8]: Overall Wellbeing,\n  [9]: Lonliness.\nThis command will also generate a timecode for the stored results so that you can delete them later.\n!getperma @user : displays averages for user\'s stored PERMA scores.\n!delperm (timecode) : will delete the specified set of PERMA scores.\`\`\``);
+#PsychBot\'s Commands\n!help : displays this message.\n\n< Memes >\n!isdoe @user : checks if mentioned user is Doe.\n!whois @user : displays info on the mentioned user.\n!roll # : rolls a die with the specified number of sides.\n!gmroll # : same as roll but the result is sent to you in a DM.\n!yn (question) : will answer your question with yes or no.\n!8ball (question) : will shake a magic 8 ball for you.\n\n< Goals >\n!setgoal (goal) : will set a publically viewable goal.\n!getgoal @user : displays the mentioned user\'s goal.\n!delgoal : will delete your set goal.\n\n< Wellbeing Tracking >\n[Wellbeing scores can be obtained at Jinco\'s Github](http://jincosghost.github.io/permap).\n!setperma 1,2,3,4,5,6,7,8,9 : will store your PERMA scores in this order:\n    [1]: Positive Emotion,\n    [2]: Negative Emotion,\n    [3]: Engagement,\n    [4]: Relationships,\n    [5]: Meaning,\n    [6]: Accomplishment,\n    [7]: Health,\n    [8]: Overall Wellbeing,\n    [9]: Lonliness.\nThis command will also generate a timecode for the stored results so that you can delete them later.\n!getperma @user : displays averages for user\'s stored PERMA scores.\n!delperma (timecode) : will delete the specified set of PERMA scores.\`\`\``);
     } else if (msg.content.startsWith(prefix + "isdoe")) {
         let usr = msg.mentions.users.first();
         if (!isMention(usr)) {
@@ -298,7 +298,7 @@ function init(){
         databaseURL: settings.db
     });
 
-    bot.login(atob(settings.testingtoken));
+    bot.login(atob(settings.token));
 }
 
 init();
