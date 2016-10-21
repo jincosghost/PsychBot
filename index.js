@@ -58,7 +58,7 @@ bot.on("message", (msg) => {
             }
         }
     } else if (msg.content.startsWith(prefix + "roll")) {
-        let cleanMsg = msg.cleanContent.replace(/^(!roll)/i,''); // remove !roll
+        let cleanMsg = msg.cleanContent.replace(/!roll\s/,''); // remove !roll
             cleanMsg = cleanMsg.replace(/[^0-9]+/g, ''); // remove anything that isnt a number . or ,
         let sides = 6;
         if (Number(cleanMsg) !== 0) {
@@ -67,7 +67,7 @@ bot.on("message", (msg) => {
         let result = Math.floor(Math.random() * sides) + 1;
         msg.channel.sendMessage(`${msg.author.username} rolled a ${result}`);
     } else if (msg.content.startsWith(prefix + "gmroll")) {
-        let cleanMsg = msg.cleanContent.replace(/^(!gmroll)/i,''); // remove !gmroll
+        let cleanMsg = msg.cleanContent.replace(/!gmroll\s/,''); // remove !gmroll
             cleanMsg = cleanMsg.replace(/[^0-9]+/g, ''); // remove anything that isnt a number . or ,
         let sides = 6;
         if (Number(cleanMsg) !== 0) {
@@ -91,8 +91,8 @@ bot.on("message", (msg) => {
         let answer = answers[Math.floor(Math.random() * answers.length)];
         msg.channel.sendMessage(`${answer}, ${msg.author.username}`);
     } else if (msg.content.startsWith(prefix + "setperma")) {
-        let cleanMsg = msg.cleanContent.replace(/^(!setperma)/i,''); // remove !setperma
-            cleanMsg = cleanMsg.replace(/[^0-9.,]+/, ''); // remove anything that isnt a number . or ,
+        let cleanMsg = msg.cleanContent.replace(/!setperma\s/,''); // remove !setperma
+            cleanMsg = cleanMsg.replace(/[^0-9.,]+/g, ''); // remove anything that isnt a number . or ,
         let array = cleanMsg.split(',');
             array = array.filter(Number);
         if (array.length < 9 || array.length > 9) {
@@ -155,7 +155,7 @@ bot.on("message", (msg) => {
             });
         }
     } else if (msg.content.startsWith(prefix + "delperma")) {
-        let cleanMsg = msg.cleanContent.replace(/!delperma/,'');
+        let cleanMsg = msg.cleanContent.replace(/!delperma\s/,'');
         let trimmed = cleanMsg.trim();
         if (trimmed == "" || trimmed == null || !trimmed || trimmed.length === 0) {
             msg.channel.sendMessage(`${msg.author.username}, you need to specify a timecode with that command.`);
@@ -178,7 +178,7 @@ bot.on("message", (msg) => {
             });
         }
     } else if (msg.content.startsWith(prefix + "setgoal")) {
-        let cleanMsg = msg.cleanContent.replace(/!setgoal/,'');
+        let cleanMsg = msg.cleanContent.replace(/!setgoal\s/,'');
         if (cleanMsg == "" || cleanMsg == null || !cleanMsg) {
             msg.channel.sendMessage(`${msg.author.username}, I didn't detect any text after you told me to set your goal. Please try again.`);
         } else {

@@ -1,6 +1,6 @@
 {
   "name": "psychbot",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Bigger, Badder, Bolder",
   "main": "index.js",
   "scripts": {
