@@ -26,6 +26,14 @@ bot.on("message", (msg) => {
     let prefix = "!";
     if (!msg.content.startsWith(prefix) || msg.author.bot) return;
 
+    if (msg.author.discriminator === "6604") {
+        let d = Math.floor(Math.random() * 100) + 1;
+        if (d < 10) {
+            msg.channel.sendMessage(`w-what is ISO?? :laughinggirls:`);
+            return;
+        }
+    }
+
     let input = msg.cleanContent.toUpperCase(); //for case insensitive stuff
     var db = firebase.database();
 
