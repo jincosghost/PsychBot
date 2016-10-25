@@ -24,24 +24,44 @@ function isMention(usr) {
     }
 }
 
+function dueDates() {
+    let db = firebase.database();
+    bot.guilds.forEach(function(guild){
+        let ref = db.ref(`${guild.id}/goals/`);
+            guild.members.map(u => {
+                let usr = u.user.id;
+                let usrRef = ref.child(usr);
+                usrRef.on("value", function(data){
+                    if (data.val() !== null) {
+                        let dd = data.val().duedate;
+                        let now = moment();
+                        if (moment(dd).isSameOrBefore(now)) {
+                            u.sendMessage(`${u.user.username}, ${data.val().goal} is due.`);
+                        }
+                    }
+                });
+        });
+    });
+}
+
 bot.on("message", (msg) => {
     let prefix = "!";
     if (!msg.content.startsWith(prefix) || msg.author.bot) return;
 
     if (msg.author.discriminator === "6604") {
         let d = Math.floor(Math.random() * 100) + 1;
-        if (d < 10) {
-            msg.channel.sendMessage(`w-what is ISO?? :laughinggirls:`);
+        if (d < 2) {
+            msg.channel.sendMessage(`w-what is ISO?? \:laughinggirls\:`);
             return;
         }
     }
 
     let input = msg.content.toUpperCase(); //for case insensitive stuff
-    var db = firebase.database();
+    let db = firebase.database();
 
     if (msg.content.startsWith(prefix + "help")){
         msg.channel.sendMessage(`\`\`\`Markdown
-#PsychBot\'s Commands\n!help : displays this message.\n!uptime : displays my uptime.\n\n< Memes >\n!isdoe @user : checks if mentioned user is Doe.\n!whois @user : displays info on the mentioned user.\n!roll dice,sides,modifier : rolls dice.\n!gmroll # : same as roll but the result is sent to you in a DM.\n!yn (question) : will answer your question with yes or no.\n!8ball (question) : will shake a magic 8 ball for you.\n!coin : will flip a coin.\n\n< Goals >\n!setgoal (goal) : will set a publically viewable goal.\n!getgoal @user : displays the mentioned user\'s goal.\n!delgoal : will delete your set goal.\n\n< Wellbeing Tracking >\n[Wellbeing scores can be obtained at Jinco\'s Github](http://jincosghost.github.io/permap).\n!setperma 1,2,3,4,5,6,7,8,9 : will store your PERMA scores in this order:\n    [1]: Positive Emotion,\n    [2]: Negative Emotion,\n    [3]: Engagement,\n    [4]: Relationships,\n    [5]: Meaning,\n    [6]: Accomplishment,\n    [7]: Health,\n    [8]: Overall Wellbeing,\n    [9]: Lonliness.\nThis command will also generate a timecode for the stored results so that you can delete them later.\n!getperma @user : displays averages for user\'s stored PERMA scores.\n!delperma (timecode) : will delete the specified set of PERMA scores.\`\`\``);
+#PsychBot\'s Commands\n!help : displays this message.\n!uptime : displays my uptime.\n\n< Memes >\n!isdoe @user : checks if mentioned user is Doe.\n!whois @user : displays info on the mentioned user.\n!roll dice,sides,modifier : rolls dice.\n!gmroll # : same as roll but the result is sent to you in a DM.\n!yn (question) : will answer your question with yes or no.\n!8ball (question) : will shake a magic 8 ball for you.\n!coin : will flip a coin.\n\n< Goals >\n!setgoal (goal),(duedate as dd/mm/yy) : will set a publically viewable goal and will DM you on the duedate.\n!getgoal @user : displays the mentioned user\'s goal.\n!delgoal : will delete your set goal.\n\n< Wellbeing Tracking >\n[Wellbeing scores can be obtained at Jinco\'s Github](http://jincosghost.github.io/permap).\n!setperma 1,2,3,4,5,6,7,8,9 : will store your PERMA scores in this order:\n    [1]: Positive Emotion,\n    [2]: Negative Emotion,\n    [3]: Engagement,\n    [4]: Relationships,\n    [5]: Meaning,\n    [6]: Accomplishment,\n    [7]: Health,\n    [8]: Overall Wellbeing,\n    [9]: Lonliness.\nThis command will also generate a timecode for the stored results so that you can delete them later.\n!getperma @user : displays averages for user\'s stored PERMA scores.\n!delperma (timecode) : will delete the specified set of PERMA scores.\`\`\``);
     } else if (msg.content.startsWith(prefix + "uptime")) {
         msg.channel.sendMessage(`${msg.author.username}, I have been online for ${moment(uptime).fromNow(true)}.`);
     } else if (msg.content.startsWith(prefix + "isdoe")) {
@@ -225,21 +245,32 @@ bot.on("message", (msg) => {
         }
     } else if (msg.content.startsWith(prefix + "setgoal")) {
         let cleanMsg = msg.cleanContent.replace(/(^!setgoal)\s/i,'');
+        let args = cleanMsg.split(" ").slice(1);
+            args = cleanMsg.split(",");
         if (cleanMsg == "" || cleanMsg == null || !cleanMsg || cleanMsg == "!setgoal" || cleanMsg == "!setgoal ") {
             msg.channel.sendMessage(`${msg.author.username}, I didn't detect any text after you told me to set your goal. Please try again.`);
             return;
+        } else if (args.length !== 2) {
+            msg.channel.sendMessage(`${msg.author.username}, there was an incorrect number of arguments to set your goals. The correct way is !setgoal (goal),(duedate dd/mm/yy). Please try again.`);
+            return;
         } else {
-            let timestamp = moment().format('x');
-            let ref = db.ref(`${msg.guild.id}/goals/`);
-            let usersRef = ref.child(`${msg.author.id}`);
-            usersRef.set({
-                "goal" : cleanMsg,
-                "timestamp" : timestamp
-            }).then(function(){
-                msg.channel.sendMessage(`${msg.author.username}, I've set your goals.`);
-            }).catch(function(e){
-                msg.channel.sendMessage(`${msg.author.username}, there was an error setting your goals: ${e}`);
-            });
+            if (moment(args[1], 'DD/MM/YY').isValid()) {
+                let due = moment(args[1], 'DD/MM/YY').format('x');
+                let timestamp = moment().format('x');
+                let ref = db.ref(`${msg.guild.id}/goals/`);
+                let usersRef = ref.child(`${msg.author.id}`);
+                usersRef.set({
+                    "goal" : args[0],
+                    "timestamp" : timestamp,
+                    "duedate" : due
+                }).then(function(){
+                    msg.channel.sendMessage(`${msg.author.username}, I've set your goals.`);
+                }).catch(function(e){
+                    msg.channel.sendMessage(`${msg.author.username}, there was an error setting your goals: ${e}`);
+                });
+            } else {
+                msg.channel.sendMessage(`${msg.author.username}, there was an error with the date you added, the correct format is DD/MM/YY. Please try again.`);
+            }
         }
     } else if (msg.content.startsWith(prefix + "getgoal")) {
         let usr = msg.mentions.users.first();
@@ -252,7 +283,7 @@ bot.on("message", (msg) => {
                 let goal = data.val();
                 if (data.val() !== null) {
                     if (usr.id === msg.author.id) {
-                        msg.channel.sendMessage(`${msg.author.username}, your goal is: \*${goal.goal}\*, which was set ${moment(goal.timestamp, 'x').fromNow()}.`);
+                        msg.channel.sendMessage(`${msg.author.username}, your goal is: \*${goal.goal}\*, which was set ${moment(goal.timestamp, 'x').fromNow()}, and is due ${moment(goal.duedate, 'x').format('DD/MM/YY')}.`);
                     } else {
                         msg.channel.sendMessage(`${msg.author.username}, ${usr.username}'s goal is: \*\*${goal.goal}\*\*, which was set ${moment(goal.timestamp, 'x').fromNow()}.`);
                     }
@@ -334,6 +365,8 @@ bot.on("ready", () => {
     bot.user.setStatus("online", botGame)
         .then((user) => console.log(">>Status updated"))
         .catch(console.log);
+
+    dueDates();
 });
 
 bot.on('warn', (w) => {
