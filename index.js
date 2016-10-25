@@ -3,6 +3,7 @@ const atob = require("atob");
 const Discord = require("discord.js");
 const firebase = require("firebase");
 const moment = require("moment");
+const yt = require('ytdl-core');
 const settings = require("./settings.json");
 
 //create bot
@@ -14,7 +15,7 @@ const botAvatar = settings.avatar;
 const botGame = settings.game;
 const welcomePM = settings.welcomePM.join("\n");
 
-let uptime;
+let uptime, stream, dispatcher;
 
 function isMention(usr) {
     if (usr == null || typeof usr == undefined || usr == undefined) {
@@ -61,7 +62,7 @@ bot.on("message", (msg) => {
 
     if (msg.content.startsWith(prefix + "help")){
         msg.channel.sendMessage(`\`\`\`Markdown
-#PsychBot\'s Commands\n!help : displays this message.\n!uptime : displays my uptime.\n\n< Memes >\n!isdoe @user : checks if mentioned user is Doe.\n!whois @user : displays info on the mentioned user.\n!roll dice,sides,modifier : rolls dice.\n!gmroll # : same as roll but the result is sent to you in a DM.\n!yn (question) : will answer your question with yes or no.\n!8ball (question) : will shake a magic 8 ball for you.\n!coin : will flip a coin.\n\n< Goals >\n!setgoal (goal),(duedate as dd/mm/yy) : will set a publically viewable goal and will DM you on the duedate.\n!getgoal @user : displays the mentioned user\'s goal.\n!delgoal : will delete your set goal.\n\n< Wellbeing Tracking >\n[Wellbeing scores can be obtained at Jinco\'s Github](http://jincosghost.github.io/permap).\n!setperma 1,2,3,4,5,6,7,8,9 : will store your PERMA scores in this order:\n    [1]: Positive Emotion,\n    [2]: Negative Emotion,\n    [3]: Engagement,\n    [4]: Relationships,\n    [5]: Meaning,\n    [6]: Accomplishment,\n    [7]: Health,\n    [8]: Overall Wellbeing,\n    [9]: Lonliness.\nThis command will also generate a timecode for the stored results so that you can delete them later.\n!getperma @user : displays averages for user\'s stored PERMA scores.\n!delperma (timecode) : will delete the specified set of PERMA scores.\`\`\``);
+#PsychBot\'s Commands\n!help : displays this message.\n!uptime : displays my uptime.\n\n< Memes >\n!play (youtube url ending) : will play audio.\n!stop : stops audio.\n!isdoe @user : checks if mentioned user is Doe.\n!whois @user : displays info on the mentioned user.\n!roll dice,sides,modifier : rolls dice.\n!gmroll # : same as roll but the result is sent to you in a DM.\n!yn (question) : will answer your question with yes or no.\n!8ball (question) : will shake a magic 8 ball for you.\n!coin : will flip a coin.\n\n< Goals >\n!setgoal (goal),(duedate as dd/mm/yy) : will set a publically viewable goal and will DM you on the duedate.\n!getgoal @user : displays the mentioned user\'s goal.\n!delgoal : will delete your set goal.\n\n< Wellbeing Tracking >\n[Wellbeing scores can be obtained at Jinco\'s Github](http://jincosghost.github.io/permap).\n!setperma 1,2,3,4,5,6,7,8,9 : will store your PERMA scores in this order:\n    [1]: Positive Emotion,\n    [2]: Negative Emotion,\n    [3]: Engagement,\n    [4]: Relationships,\n    [5]: Meaning,\n    [6]: Accomplishment,\n    [7]: Health,\n    [8]: Overall Wellbeing,\n    [9]: Lonliness.\nThis command will also generate a timecode for the stored results so that you can delete them later.\n!getperma @user : displays averages for user\'s stored PERMA scores.\n!delperma (timecode) : will delete the specified set of PERMA scores.\`\`\``);
     } else if (msg.content.startsWith(prefix + "uptime")) {
         msg.channel.sendMessage(`${msg.author.username}, I have been online for ${moment(uptime).fromNow(true)}.`);
     } else if (msg.content.startsWith(prefix + "isdoe")) {
@@ -314,6 +315,38 @@ bot.on("message", (msg) => {
         }).catch(function(e){
             msg.channel.sendMessage(`${msg.author.username}, there was an error: ${e}`);
         });
+    } else if (msg.content.startsWith(prefix + 'play')) {
+        let args = msg.cleanContent.split(" ").slice(1);
+        if (args.length !== 1) {
+            return msg.channel.sendMessage(`${msg.author.username}, play what, dingus??`);
+        }
+        let url = args[0];
+        const voiceChannel = msg.member.voiceChannel;
+        if (!voiceChannel) {
+            return msg.channel.sendMessage(`Please be in a voice channel first!`);
+        }
+        voiceChannel.join()
+        .then(connnection => {
+            stream = yt("https://www.youtube.com/watch?v=" + url, {audioonly: true});
+            dispatcher = connnection.playStream(stream);
+            /*yt.getInfo("https://www.youtube.com/watch?v=" + url, function(err, info) {
+                msg.channel.sendMessage(`Playing ${info.title} in ${voiceChannel}`);
+            });*/
+            dispatcher.on('end', () => {
+                stream = null;
+                dispatcher = null;
+                voiceChannel.leave();
+                msg.delete();
+            });
+        });
+    } else if (msg.content.startsWith(prefix + 'stop')) {
+        const voiceChannel = msg.member.voiceChannel;
+        if (!voiceChannel) {
+            return msg.channel.sendMessage(`Please be in a voice channel first!`);
+        }
+        stream.destroy();
+        voiceChannel.leave();
+        msg.delete();
     } else {
         return;
     }
@@ -380,10 +413,14 @@ function init(){
         databaseURL: settings.db
     });
 
-    bot.login(atob(settings.token));
+    bot.login(atob(settings.testingtoken));
 }
 
 init();
+
+process.on("unhandledRejection", err => {
+  console.error("Uncaught Promise Error: \n" + err.stack);
+});
 
 
 // REJECTVILLE
