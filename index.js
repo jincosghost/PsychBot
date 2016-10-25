@@ -285,7 +285,7 @@ bot.on("message", (msg) => {
                     if (usr.id === msg.author.id) {
                         msg.channel.sendMessage(`${msg.author.username}, your goal is: \*${goal.goal}\*, which was set ${moment(goal.timestamp, 'x').fromNow()}, and is due ${moment(goal.duedate, 'x').format('DD/MM/YY')}.`);
                     } else {
-                        msg.channel.sendMessage(`${msg.author.username}, ${usr.username}'s goal is: \*\*${goal.goal}\*\*, which was set ${moment(goal.timestamp, 'x').fromNow()}.`);
+                        msg.channel.sendMessage(`${msg.author.username}, ${usr.username}'s goal is: \*\*${goal.goal}\*\*, which was set ${moment(goal.timestamp, 'x').fromNow()}, and is due ${moment(goal.duedate, 'x').format('DD/MM/YY')}.`);
                     }
                 } else {
                     if (usr.id === msg.author.id) {
