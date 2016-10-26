@@ -1,9 +1,9 @@
+/*jshint esversion: 6 */
 "use strict";
 const atob = require("atob");
 const Discord = require("discord.js");
 const firebase = require("firebase");
 const moment = require("moment");
-const yt = require('ytdl-core');
 const settings = require("./settings.json");
 
 //create bot
@@ -15,32 +15,27 @@ const botAvatar = settings.avatar;
 const botGame = settings.game;
 const welcomePM = settings.welcomePM.join("\n");
 
-let uptime, stream, dispatcher;
+let uptime;
 
 function isMention(usr) {
-    if (usr == null || typeof usr == undefined || usr == undefined) {
-        return false;
-    } else {
-        return true;
-    }
+    return (usr === null || typeof usr === undefined || usr === undefined) ? false : true;
 }
 
 function dueDates() {
     let db = firebase.database();
     bot.guilds.forEach(function(guild){
         let ref = db.ref(`${guild.id}/goals/`);
-            guild.members.map(u => {
-                let usr = u.user.id;
-                let usrRef = ref.child(usr);
-                usrRef.on("value", function(data){
-                    if (data.val() !== null) {
-                        let dd = data.val().duedate;
-                        let now = moment();
-                        if (moment(dd).isSameOrBefore(now)) {
-                            u.sendMessage(`${u.user.username}, ${data.val().goal} is due.`);
-                        }
+        guild.members.map(u => {
+            let usrRef = ref.child(u.user.id);
+            usrRef.on("value", function(data){
+                if (data.val() !== null) {
+                    let dd = data.val().duedate;
+                    let now = moment();
+                    if (moment(dd).isSameOrBefore(now)) {
+                        u.sendMessage(`${u.user.username}, ${data.val().goal} is due.`);
                     }
-                });
+                }
+            });
         });
     });
 }
@@ -52,8 +47,7 @@ bot.on("message", (msg) => {
     if (msg.author.discriminator === "6604") {
         let d = Math.floor(Math.random() * 100) + 1;
         if (d < 2) {
-            msg.channel.sendMessage(`w-what is ISO?? \:laughinggirls\:`);
-            return;
+            return msg.channel.sendMessage(`w-what is ISO?? \:laughinggirls\:`);
         }
     }
 
@@ -69,7 +63,6 @@ bot.on("message", (msg) => {
         let usr = msg.mentions.users.first();
         if (!isMention(usr)) {
             msg.channel.sendMessage(`${msg.author.username}, you need to mention a user to check if they're Doe.`);
-            return;
         } else if (usr.id === msg.author.id) {
             msg.channel.sendMessage(`I'd be concerned if you don't know who you are, ${msg.author.username}`);
         } else if (usr.discriminator === "2753" || usr.discriminator === "6604") {
@@ -81,7 +74,6 @@ bot.on("message", (msg) => {
         let usr = msg.mentions.users.first();
         if (!isMention(usr)) {
             msg.channel.sendMessage(`${msg.author.username}, you need to mention a user to do whois.`);
-            return;
         } else {
             let theMember = msg.guild.member(usr);
             let dob = theMember.joinDate;
@@ -93,30 +85,26 @@ bot.on("message", (msg) => {
             }
         }
     } else if (msg.content.startsWith(prefix + "roll") || msg.content.startsWith(prefix + "gmroll") ) {
-        let cleanMsg = msg.cleanContent.replace(/!roll\s/,''); // remove !roll
-            cleanMsg = cleanMsg.replace(/[^0-9,]+/g, ''); // remove anything that isnt a number or ,
+        let cleanMsg = msg.cleanContent.replace(/[^0-9,]+/g, ''); // remove anything that isnt a number or ,
         let args = cleanMsg.split(",");
-        args = args.filter(Number);
+            args = args.filter(Number);
         // default to one six-sided die with no modifier
         let dice = 1, sides = 6, modifier = 0;
         if (args.length !== 0) {
             if (args.length > 3) {
-                msg.channel.sendMessage(`I detected too many numbers to roll, ${msg.author.username}. The command is !roll dice,sides,modifier, for example: !roll 2,6,5.`);
-                return;
+                return msg.channel.sendMessage(`I detected too many numbers to roll, ${msg.author.username}. The command is !roll dice,sides,modifier, for example: !roll 2,6,5.`);
             } else if (args.length === 3){
                 dice = Number(args[0]);
                 sides = Number(args[1]);
                 modifier = Number(args[2]);
                 if (dice > 10) {
-                    msg.channel.sendMessage(`Too many dice, ${msg.author.username}. Maximum is 10.`);
-                    return;
+                    return msg.channel.sendMessage(`Too many dice, ${msg.author.username}. Maximum is 10.`);
                 }
             } else if (args.length === 2) {
                 dice = Number(args[0]);
                 sides = Number(args[1]);
                 if (dice > 10) {
-                    msg.channel.sendMessage(`Too many dice, ${msg.author.username}. Maximum is 10.`);
-                    return;
+                    return msg.channel.sendMessage(`Too many dice, ${msg.author.username}. Maximum is 10.`);
                 }
             } else if (args.length === 1) {
                 sides = Number(args[0]);
@@ -155,16 +143,13 @@ bot.on("message", (msg) => {
         let answer = answers[Math.floor(Math.random() * answers.length)];
         msg.channel.sendMessage(`${answer}, ${msg.author.username}`);
     } else if (msg.content.startsWith(prefix + "setperma")) {
-        let cleanMsg = msg.cleanContent.replace(/!setperma\s/,''); // remove !setperma
-            cleanMsg = cleanMsg.replace(/[^0-9.,]+/g, ''); // remove anything that isnt a number . or ,
+        let cleanMsg = msg.cleanContent.replace(/[^0-9.,]+/g, ''); // remove anything that isnt a number . or ,
         let array = cleanMsg.split(',');
             array = array.filter(Number);
         if (array.length < 9 || array.length > 9) {
             msg.channel.sendMessage(`${msg.author.username}, I expected nine numbers in order to save your wellbeing scores. You gave me ${array.length}. Please try again.`);
-            return;
         } else if (array.some(isNaN)) {
             msg.channel.sendMessage(`${msg.author.username}, some of the data you gave me wasn't numbers. Please enter !setperma followed by nine comma seperated numbers.`);
-            return;
         } else {
             let timez = moment().format('x');
             let ref = db.ref(`${msg.guild.id}/perma/${msg.author.id}`);
@@ -189,7 +174,6 @@ bot.on("message", (msg) => {
         let usr = msg.mentions.users.first();
         if (!isMention(usr)) {
             msg.channel.sendMessage(`${msg.author.username}, you need to mention a user to get their PERMA scores.`);
-            return;
         } else {
             let ref = db.ref(`${msg.guild.id}/perma/${usr.id}`);
             ref.once("value", function(data){
@@ -214,7 +198,7 @@ bot.on("message", (msg) => {
                     }
                     var avg = sum/arr.length;
                         return avg;
-                }
+                };
                 msg.channel.sendMessage(`\`\`\`Markdown
 #${usr.username}\'s PERMA Scores\nBased on ${entries} sets of PERMA scores, here are ${usr.username}\'s averages:\n\n Positive Emotion: ${calc(arrPE)}\n Negative Emotion: ${calc(arrNE)}\n       Engagement: ${calc(arrNG)}\n    Relationships: ${calc(arrRE)}\n          Meaning: ${calc(arrME)}\n   Accomplishment: ${calc(arrAC)}\n           Health: ${calc(arrHE)}\n        Lonliness: ${calc(arrLO)}\nOverall Wellbeing: ${calc(arrOW)}\`\`\``);
             }).catch(function(e){
@@ -222,11 +206,9 @@ bot.on("message", (msg) => {
             });
         }
     } else if (msg.content.startsWith(prefix + "delperma")) {
-        let cleanMsg = msg.cleanContent.replace(/!delperma\s/,'');
-        let trimmed = cleanMsg.trim();
-        if (trimmed == "" || trimmed == null || !trimmed || trimmed.length === 0) {
+        let cleanMsg = msg.cleanContent.replace(/[^0-9]+/g, ''); // remove anything that isnt a number
+        if (cleanMsg === "" || cleanMsg === null || !cleanMsg || cleanMsg.length === 0) {
             msg.channel.sendMessage(`${msg.author.username}, you need to specify a timecode with that command.`);
-            return;
         } else {
             let ref = db.ref(`${msg.guild.id}/perma/${msg.author.id}/`);
             let usersRef = ref.child(`${cleanMsg}`);
@@ -245,30 +227,30 @@ bot.on("message", (msg) => {
             });
         }
     } else if (msg.content.startsWith(prefix + "setgoal")) {
-        let cleanMsg = msg.cleanContent.replace(/(^!setgoal)\s/i,'');
-        let args = cleanMsg.split(" ").slice(1);
-            args = cleanMsg.split(",");
-        if (cleanMsg == "" || cleanMsg == null || !cleanMsg || cleanMsg == "!setgoal" || cleanMsg == "!setgoal ") {
-            msg.channel.sendMessage(`${msg.author.username}, I didn't detect any text after you told me to set your goal. Please try again.`);
-            return;
-        } else if (args.length !== 2) {
+        var cleanMsg = msg.content.replace(/[(!setgoal)]+\s/, "");
+        let args = cleanMsg.split(",");
+        console.log(cleanMsg, args);
+        if (args.length !== 2) {
             msg.channel.sendMessage(`${msg.author.username}, there was an incorrect number of arguments to set your goals. The correct way is !setgoal (goal),(duedate dd/mm/yy). Please try again.`);
-            return;
         } else {
-            if (moment(args[1], 'DD/MM/YY').isValid()) {
-                let due = moment(args[1], 'DD/MM/YY').format('x');
-                let timestamp = moment().format('x');
-                let ref = db.ref(`${msg.guild.id}/goals/`);
-                let usersRef = ref.child(`${msg.author.id}`);
-                usersRef.set({
-                    "goal" : args[0],
-                    "timestamp" : timestamp,
-                    "duedate" : due
-                }).then(function(){
-                    msg.channel.sendMessage(`${msg.author.username}, I've set your goals.`);
-                }).catch(function(e){
-                    msg.channel.sendMessage(`${msg.author.username}, there was an error setting your goals: ${e}`);
-                });
+            if (args[1].match(/\d{2}\/\d{2}\/\d{2}/)) {
+                if (moment(args[1], 'DD/MM/YY').isValid()) {
+                    let due = moment(args[1], 'DD/MM/YY').format('x');
+                    let timestamp = moment().format('x');
+                    let ref = db.ref(`${msg.guild.id}/goals/`);
+                    let usersRef = ref.child(`${msg.author.id}`);
+                    usersRef.set({
+                        "goal" : args[0],
+                        "timestamp" : timestamp,
+                        "duedate" : due
+                    }).then(function(){
+                        msg.channel.sendMessage(`${msg.author.username}, I've set your goals.`);
+                    }).catch(function(e){
+                        msg.channel.sendMessage(`${msg.author.username}, there was an error setting your goals: ${e}`);
+                    });
+                } else {
+                    msg.channel.sendMessage(`${msg.author.username}, there was an error with the date you added, the correct format is DD/MM/YY. Please try again.`);
+                }
             } else {
                 msg.channel.sendMessage(`${msg.author.username}, there was an error with the date you added, the correct format is DD/MM/YY. Please try again.`);
             }
@@ -277,7 +259,6 @@ bot.on("message", (msg) => {
         let usr = msg.mentions.users.first();
         if (!isMention(usr)) {
             msg.channel.sendMessage(`${msg.author.username}, you need to mention a user to get their goals.`);
-            return;
         } else {
             let ref = db.ref(`${msg.guild.id}/goals/${usr.id}`);
             ref.once("value", function(data){
@@ -315,38 +296,6 @@ bot.on("message", (msg) => {
         }).catch(function(e){
             msg.channel.sendMessage(`${msg.author.username}, there was an error: ${e}`);
         });
-    } else if (msg.content.startsWith(prefix + 'play')) {
-        let args = msg.cleanContent.split(" ").slice(1);
-        if (args.length !== 1) {
-            return msg.channel.sendMessage(`${msg.author.username}, play what, dingus??`);
-        }
-        let url = args[0];
-        const voiceChannel = msg.member.voiceChannel;
-        if (!voiceChannel) {
-            return msg.channel.sendMessage(`Please be in a voice channel first!`);
-        }
-        voiceChannel.join()
-        .then(connnection => {
-            stream = yt("https://www.youtube.com/watch?v=" + url, {audioonly: true});
-            dispatcher = connnection.playStream(stream);
-            /*yt.getInfo("https://www.youtube.com/watch?v=" + url, function(err, info) {
-                msg.channel.sendMessage(`Playing ${info.title} in ${voiceChannel}`);
-            });*/
-            dispatcher.on('end', () => {
-                stream = null;
-                dispatcher = null;
-                voiceChannel.leave();
-                msg.delete();
-            });
-        });
-    } else if (msg.content.startsWith(prefix + 'stop')) {
-        const voiceChannel = msg.member.voiceChannel;
-        if (!voiceChannel) {
-            return msg.channel.sendMessage(`Please be in a voice channel first!`);
-        }
-        stream.destroy();
-        voiceChannel.leave();
-        msg.delete();
     } else {
         return;
     }
@@ -354,7 +303,7 @@ bot.on("message", (msg) => {
 
 bot.on('guildMemberAdd', (guild, member) => {
     let userTag = null;
-    if (typeof member.nickname == "undefined" || member.nickname == "undefined" || member.nickname == null) {
+    if (typeof member.nickname === "undefined" || member.nickname === "undefined" || member.nickname === null) {
         userTag = member.user.username;
     } else {
         userTag = member.nickname;
@@ -366,7 +315,7 @@ bot.on('guildMemberAdd', (guild, member) => {
 
 bot.on("guildMemberRemove", (guild, member) => {
     let userTag = null;
-    if (typeof member.nickname == "undefined" || member.nickname == "undefined" || member.nickname == null) {
+    if (typeof member.nickname === "undefined" || member.nickname === "undefined" || member.nickname === null) {
         userTag = member.user.username;
     } else {
         userTag = member.nickname;
@@ -413,7 +362,7 @@ function init(){
         databaseURL: settings.db
     });
 
-    bot.login(atob(settings.testingtoken));
+    bot.login(atob(settings.token));
 }
 
 init();
