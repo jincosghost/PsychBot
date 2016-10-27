@@ -1,15 +1,10 @@
-###
 ### Project Specific Ignores
-###
 node_modules/
 *.json
 !package.json
 *.log
 
-###
 ### Ignore OS X Files
-###
-
 *.DS_Store
 .AppleDouble
 .LSOverride
